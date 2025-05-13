@@ -1,3 +1,3 @@
-const DB_NAME = "TaskeManagementDB";
+const DB_NAME = "TaskManagementDB";
 
 export { DB_NAME };
