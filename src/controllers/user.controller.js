@@ -108,7 +108,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    // secure: true,
+    secure: process.env.NODE_ENV === "production", // Only secure in production
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
   };
 
   return res
@@ -164,41 +167,36 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 // Refresh Access Token
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  // Get fresh token from cookies
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
-  // Check if refresh token is present
   if (!incomingRefreshToken) {
-    throw new ApiError(401, "Please login to access this resource");
+    throw new ApiError(401, "Unauthorized request");
   }
 
   try {
-    // Verify refresh token
     const decodedToken = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-
-    // Check if user exists
     const user = await User.findById(decodedToken?._id);
 
     if (!user) {
-      throw new ApiError(401, "User not found");
+      throw new ApiError(401, "Invalid refresh token");
     }
 
-    // Check if refresh token is valid
-    if (user.refreshToken !== incomingRefreshToken) {
-      throw new ApiError(401, "Invalid or expired refresh token");
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or used");
     }
 
-    // Generate new access and refresh token
-    const { accessToken, newRefreshToken } =
-      await generateAccessAndRefreshToken(user?._id);
+    const { accessToken, refreshToken: newRefreshToken } =
+      await generateAccessAndRefreshToken(user._id);
 
     const options = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
     };
 
     return res
@@ -208,15 +206,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          {
-            accessToken,
-            newRefreshToken,
-          },
-          "Access token refreshed successfully"
+          { accessToken, refreshToken: newRefreshToken },
+          "Access token refreshed"
         )
       );
   } catch (error) {
-    throw new ApiError(401, `Invalid refresh token ${error?.message}`);
+    throw new ApiError(401, error?.message || "Invalid refresh token");
   }
 });
 
