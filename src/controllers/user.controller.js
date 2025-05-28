@@ -124,6 +124,9 @@ const loginUser = asyncHandler(async (req, res) => {
         200,
         {
           user: loggedInUser,
+          token: accessToken, // Add this for mobile
+          accessToken: accessToken, // Add this for mobile
+          refreshToken: refreshToken, // Add this for mobile
         },
         "User logged In Successfully"
       )
@@ -169,7 +172,9 @@ const logoutUser = asyncHandler(async (req, res) => {
 // Refresh Access Token
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+    req.cookies.refreshToken ||
+    req.body.refreshToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Unauthorized request");
@@ -208,7 +213,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+          { accessToken, refreshToken: newRefreshToken, token: accessToken },
           "Access token refreshed"
         )
       );
