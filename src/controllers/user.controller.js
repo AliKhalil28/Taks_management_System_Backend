@@ -112,6 +112,7 @@ const loginUser = asyncHandler(async (req, res) => {
     secure: process.env.NODE_ENV === "production", // Only secure in production
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    domain: process.env.NODE_ENV === "production" ? undefined : "localhost",
   };
 
   return res
@@ -197,6 +198,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
+      domain: process.env.NODE_ENV === "production" ? undefined : "localhost",
     };
 
     return res

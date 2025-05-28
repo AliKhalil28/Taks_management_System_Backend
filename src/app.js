@@ -10,7 +10,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:3000",
-      "https://task-management-frontend-mtawse923.vercel.app/",
+      "https://task-management-frontend-mtawse923.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
