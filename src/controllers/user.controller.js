@@ -172,8 +172,9 @@ const logoutUser = asyncHandler(async (req, res) => {
 // Refresh Access Token
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken ||
-    req.body.refreshToken ||
+    req.cookies?.refreshToken ||
+    req.body?.refreshToken ||
+    req.body?.token ||
     req.header("Authorization")?.replace("Bearer ", "");
 
   if (!incomingRefreshToken) {
