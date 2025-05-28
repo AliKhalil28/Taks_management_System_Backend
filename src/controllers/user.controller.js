@@ -71,23 +71,23 @@ const registerUser = asyncHandler(async (req, res) => {
 // Login user
 const loginUser = asyncHandler(async (req, res) => {
   // Get user detail from requst body
-  const { email, password } = req.body;
+  const { username, password } = req.body;
 
-  if (!email || !password) {
-    throw new ApiError(400, "Please provide email and password");
+  if (!username || !password) {
+    throw new ApiError(400, "Please provide username and password");
   }
 
   // Validate user details
-  if ([email, password].some((field) => field?.trim() === "")) {
+  if ([username, password].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "Please fill all the fields");
   }
 
   // Check if user exists
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ username });
 
   // Check if user exists
   if (!user) {
-    throw new ApiError(401, "Invalid email or password");
+    throw new ApiError(401, "Invalid username or password");
   }
 
   // Check if password is correct
@@ -272,7 +272,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     {
       $set: {
         email,
-        username: username.trim().toLowerCase(),
+        username,
         fullName,
       },
     },

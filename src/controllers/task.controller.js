@@ -50,157 +50,74 @@ const createTask = asyncHandler(async (req, res) => {
 });
 
 // Get all tasks
-const getAllTasks = asyncHandler(async (req, res) => {
-  // Extract query parameters
-  const {
-    page = 1,
-    limit = 10,
-    query,
-    sortByPriority,
-    sortByStatus,
-    sortByDueDate,
-  } = req.query;
+const getAllTasks = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      search,
+      sortBy = "dueDate",
+      sortOrder = "asc",
+    } = req.query;
 
-  // Validate pagination parameters
-  const pageNumber = parseInt(page);
-  const limitNumber = parseInt(limit);
+    // Build query object - START WITH USER FILTER
+    const query = { userId: req.user._id };
 
-  if (isNaN(pageNumber) || pageNumber < 1) {
-    throw new ApiError(400, "Invalid page number.");
+    // Add status filter - THIS IS MISSING IN YOUR BACKEND
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    // Add priority filter - THIS IS MISSING IN YOUR BACKEND
+    if (priority && priority !== "all") {
+      query.priority = priority;
+    }
+
+    // Add search filter - THIS IS MISSING IN YOUR BACKEND
+    if (search && search.trim()) {
+      query.$or = [
+        { title: { $regex: search.trim(), $options: "i" } },
+        { description: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+    // Execute query with pagination
+    const tasks = await Task.find(query)
+      .sort(sort)
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const totalTasks = await Task.countDocuments(query);
+    const totalPages = Math.ceil(totalTasks / limit);
+
+    res.json({
+      statusCode: 200,
+      success: true,
+      message: "Tasks retrieved successfully.",
+      data: {
+        tasks,
+        totalTasks,
+        currentPage: parseInt(page),
+        totalPages,
+        limit: parseInt(limit),
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      statusCode: 500,
+      success: false,
+      message: error.message,
+    });
   }
-  if (isNaN(limitNumber) || limitNumber < 1) {
-    throw new ApiError(400, "Invalid limit number.");
-  }
-
-  // Ensure user authenticated
-  if (!req.user) {
-    throw new ApiError(401, "User not authenticated.");
-  }
-
-  // Build match query
-  const matchQuery = { userId: req.user._id };
-  if (query) {
-    matchQuery.$or = [
-      { title: { $regex: query, $options: "i" } },
-      { description: { $regex: query, $options: "i" } },
-    ];
-  }
-
-  // Build Aggregation pipeline
-  const pipeline = [{ $match: matchQuery }];
-
-  // Build the sort criteria for priority, status, and dueDate
-  const addFields = {};
-
-  // Sort by prirority
-  if (sortByPriority) {
-    const priorityOrder =
-      sortByPriority.toLowerCase() === "desc"
-        ? {
-            High: 3,
-            Medium: 2,
-            Low: 1,
-          }
-        : { High: 1, Medium: 2, Low: 3 };
-    addFields.prioritySort = {
-      $cond: [
-        {
-          $eq: ["$priority", "High"],
-        },
-        priorityOrder.High,
-        {
-          $cond: [
-            { $eq: ["$priority", "Medium"] },
-            priorityOrder.Medium,
-            priorityOrder.Low,
-          ],
-        },
-      ],
-    };
-  }
-
-  // Sort by Status
-  if (sortByStatus) {
-    const statusOrder =
-      sortByStatus.toLowerCase() === "desc"
-        ? { pending: 3, "in-progress": 2, completed: 1 }
-        : { pending: 1, "in-progress": 2, completed: 3 };
-    addFields.statusSort = {
-      $cond: [
-        { $eq: ["$status", "pending"] },
-        statusOrder.pending,
-        {
-          $cond: [
-            { $eq: ["$status", "in-progress"] },
-            statusOrder["in-progress"],
-            statusOrder.completed,
-          ],
-        },
-      ],
-    };
-  }
-
-  // Add the computed fields to the pipeline
-  if (Object.keys(addFields).length > 0) {
-    pipeline.push({ $addFields: addFields });
-  }
-
-  // Build Sort Criteria
-  const sortCriteria = {};
-
-  if (sortByPriority) {
-    sortCriteria.prioritySort =
-      sortByPriority.toLowerCase() === "desc" ? -1 : 1;
-  }
-
-  if (sortByStatus) {
-    sortCriteria.statusSort = sortByStatus.toLowerCase() === "desc" ? -1 : 1;
-  }
-
-  // Sort by dueDate
-  if (sortByDueDate) {
-    sortCriteria.dueDate = sortByDueDate.toLowerCase() === "desc" ? -1 : 1;
-  }
-
-  // Default sort by createdAy if no sorting specified
-  if (!sortByPriority && !sortByStatus && !sortByDueDate) {
-    sortCriteria.createdAt = -1;
-  }
-
-  // Add sort staage to pipiline
-  if (Object.keys(sortCriteria).length > 0) {
-    pipeline.push({ $sort: sortCriteria });
-  }
-
-  const options = {
-    page: pageNumber,
-    limit: limitNumber,
-    customLabels: {
-      totalDocs: "totalTasks",
-      docs: "tasks",
-      totalPages: "totalPages",
-      page: "currentPage",
-      nextPage: "nextPage",
-      prevPage: "prevPage",
-      hasNextPage: "hasNextPage",
-      hasPrevPage: "hasPrevPage",
-    },
-  };
-
-  // Execute the aggregation with pagination
-  const result = await Task.aggregatePaginate(
-    Task.aggregate(pipeline),
-    options
-  );
-  if (!result) {
-    throw new ApiError(500, "Failed to retrieve tasks.");
-  }
-
-  // Send Response
-  res
-    .status(200)
-    .json(new ApiResponse(200, result, "Tasks retrieved successfully."));
-});
+};
 
 // Get a task by ID
 const getTaskById = asyncHandler(async (req, res) => {
