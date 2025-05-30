@@ -63,18 +63,9 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "User creation failed");
   }
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        user: createdUser,
-        token: accessToken, // Add this for mobile
-        accessToken: accessToken, // Add this for mobile
-        refreshToken: refreshToken, // Add this for mobile
-      },
-      "User created successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, createdUser, "User created successfully"));
 });
 
 // Login user
