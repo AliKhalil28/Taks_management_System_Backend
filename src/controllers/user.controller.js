@@ -29,7 +29,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 // Register a new user
 const registerUser = asyncHandler(async (req, res) => {
-  //Get user details from request body
+  // Get user details from request body
   const { email, username, fullName, password } = req.body;
 
   // Validate user details
@@ -53,7 +53,12 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
   });
 
-  // select user details to return
+  // Generate access and refresh tokens
+  const { refreshToken, accessToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  // Select user details to return
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
   );
@@ -63,9 +68,31 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "User creation failed");
   }
 
+  // Cookie options (same as loginUser)
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // Only secure in production
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    domain: process.env.NODE_ENV === "production" ? undefined : "localhost",
+  };
+
   return res
     .status(200)
-    .json(new ApiResponse(200, createdUser, "User created successfully"));
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: createdUser,
+          token: accessToken, // Add for mobile
+          accessToken: accessToken, // Add for mobile
+          refreshToken: refreshToken, // Add for mobile
+        },
+        "User created successfully"
+      )
+    );
 });
 
 // Login user
