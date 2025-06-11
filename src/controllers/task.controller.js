@@ -43,7 +43,6 @@ const createTask = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to create task.");
   }
 
-  // Send response
   res
     .status(201)
     .json(new ApiResponse(201, task, "Task created successfully."));
