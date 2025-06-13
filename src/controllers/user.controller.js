@@ -71,9 +71,9 @@ const registerUser = asyncHandler(async (req, res) => {
   // Cookie options (same as loginUser)
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // Only secure in production
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: process.env.NODE_ENV === "production", 
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+    maxAge: 24 * 60 * 60 * 1000, // 
     domain: process.env.NODE_ENV === "production" ? undefined : "localhost",
   };
 
@@ -86,9 +86,9 @@ const registerUser = asyncHandler(async (req, res) => {
         200,
         {
           user: createdUser,
-          token: accessToken, // Add for mobile
-          accessToken: accessToken, // Add for mobile
-          refreshToken: refreshToken, // Add for mobile
+          token: accessToken, 
+          accessToken: accessToken, 
+          refreshToken: refreshToken, 
         },
         "User created successfully"
       )
@@ -136,9 +136,9 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     // secure: true,
-    secure: process.env.NODE_ENV === "production", // Only secure in production
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-site cookies in production
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: process.env.NODE_ENV === "production", 
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+    maxAge: 24 * 60 * 60 * 1000, 
     domain: process.env.NODE_ENV === "production" ? undefined : "localhost",
   };
 
@@ -151,9 +151,9 @@ const loginUser = asyncHandler(async (req, res) => {
         200,
         {
           user: loggedInUser,
-          token: accessToken, // Add this for mobile
-          accessToken: accessToken, // Add this for mobile
-          refreshToken: refreshToken, // Add this for mobile
+          token: accessToken, 
+          accessToken: accessToken, 
+          refreshToken: refreshToken, 
         },
         "User logged In Successfully"
       )
